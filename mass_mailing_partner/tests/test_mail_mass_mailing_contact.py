@@ -188,4 +188,9 @@ class MailMassMailingContactCase(base.BaseCase):
             [("id", "in", (contact_1 + contact_2).ids)]
         )
         self.assertEqual(len(contact), 1)
-        self.assertEqual(contact.list_ids.ids, (list_1 + list_2).ids)
+        # Compared as sets: list_ids comes back in the comodel's _order, not
+        # in creation order, so the ordered form passed only by luck of the
+        # ids. It held on OCB and failed on Odoo in the same run
+        # ([19, 18] != [18, 19]). What the test means is that the surviving
+        # contact belongs to both lists.
+        self.assertEqual(set(contact.list_ids.ids), set((list_1 + list_2).ids))
