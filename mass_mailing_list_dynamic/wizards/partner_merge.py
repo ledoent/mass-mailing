@@ -8,8 +8,9 @@ class BasePartnerMergeAutomaticWizard(models.TransientModel):
     _inherit = "base.partner.merge.automatic.wizard"
 
     def _merge(self, partner_ids, dst_partner=None, extra_checks=True):
-        self = self.with_context(syncing=True)
-        return super()._merge(
+        # Named rather than rebinding `self` -- see models/res_partner.py.
+        syncing = self.with_context(syncing=True)
+        return super(BasePartnerMergeAutomaticWizard, syncing)._merge(
             partner_ids=partner_ids,
             dst_partner=dst_partner,
             extra_checks=extra_checks,

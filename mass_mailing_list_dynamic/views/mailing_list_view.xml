@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <!-- Copyright 2017 Tecnativa - Jairo Llopis
      License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
 <odoo>
@@ -21,7 +21,8 @@
                                 name="action_sync"
                                 type="object"
                                 string="Sync now"
-                                icon="fa-exclamation-triangle"
+                                icon="warning"
+                                icon_class="oi-filled"
                                 class="btn-danger"
                                 invisible="is_synced"
                             />
@@ -29,7 +30,8 @@
                                 name="action_sync"
                                 type="object"
                                 string="Sync now"
-                                icon="fa-refresh"
+                                icon="refresh"
+                                icon_class="oi-filled"
                                 invisible="not is_synced"
                             />
                         </div>
@@ -37,13 +39,15 @@
                     <div invisible="not dynamic">
                         <div class="alert alert-info" role="alert">
                             <i
-                            class="fa fa-info-circle"
+                            class="oi"
+                            data-icon="info"
                         /> If you want to remove contacts from a dynamic list, just <b
                         >set them as <i>Opt Out</i></b>.
                         </div>
                         <div class="alert alert-warning" role="alert">
                             <i
-                            class="fa fa-info-circle"
+                            class="oi"
+                            data-icon="info"
                         /> You cannot make manual editions of contacts in fully synchronized lists.
                         </div>
                     </div>
@@ -58,7 +62,8 @@
                         name="%(action_mailing_load_filter)d"
                         type="action"
                         string="Load filter"
-                        icon="fa-filter"
+                        icon="filter_alt"
+                        icon_class="oi-filled"
                         colspan="1"
                     />
                 </group>

@@ -12,6 +12,18 @@ from odoo.addons.base.tests.common import BaseCommon
 
 @tagged("post_install", "-at_install")
 class DynamicListCase(BaseCommon):
+    # 19.0's BaseCommon.setup_independent_user() returned None, so these ran as
+    # the superuser. 20.0 creates a real internal user from _test_user_groups,
+    # which defaults to ('base.group_user',) -- and that user can neither write
+    # mailing.list nor create res.partner.category, which is 7 of the 9 tests.
+    # Declaring the two groups the module's work actually requires is the 20.0
+    # hook for this, and exercises the module as a real operator would.
+    _test_user_groups = (
+        "base.group_user",
+        "base.group_partner_manager",
+        "mass_mailing.group_mass_mailing_user",
+    )
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -33,9 +45,13 @@ class DynamicListCase(BaseCommon):
                 "sync_domain": repr([("category_id", "in", cls.tag.ids)]),
             }
         )
+        # No "name": 20.0 dropped utm.source.mixin from mailing.mailing's
+        # _inherit, and the mixin is gone from 20.0 entirely. `name` was its
+        # related="source_id.name", so creating with it now raises
+        # `ValueError: Invalid field 'name' in 'mailing.mailing'`. `subject` is
+        # the _rec_name and already carries the same string here.
         cls.mail = cls.env["mailing.mailing"].create(
             {
-                "name": "test mass mailing",
                 "subject": "test mass mailing",
                 "contact_list_ids": [(4, cls.list.id, False)],
             }
@@ -194,7 +210,14 @@ class DynamicListCase(BaseCommon):
                 "partner_ids": [(4, partner_1.id), (4, partner_2.id)],
             }
         )
-        wizard.action_merge()
+        # sudo(): these two partners have different emails on purpose, and core
+        # refuses that merge for anyone but an administrator ("Only the
+        # Administrator can merge contacts with different emails",
+        # base_partner_merge.py). 19.0 ran the whole class as superuser so the
+        # check never fired. What this test is about is whether the merge keeps
+        # dynamic-list membership consistent, not who is allowed to start it,
+        # so it performs the merge as the role core requires.
+        wizard.sudo().action_merge()
         self.assertTrue(partner_1.id in self.list.contact_ids.mapped("partner_id").ids)
         self.assertTrue(partner_1.id in list2.contact_ids.mapped("partner_id").ids)
 

@@ -9,5 +9,7 @@ class ResPartner(models.Model):
 
     def write(self, vals):
         """Allow to write values in mass mailing contact."""
-        self = self.with_context(syncing=True)
-        return super().write(vals)
+        # Rebinding `self` is the usual Odoo spelling, but the 20.0 skeleton's
+        # ruff flags it (PLW0642). Same recordset, same context, named.
+        syncing = self.with_context(syncing=True)
+        return super(ResPartner, syncing).write(vals)
