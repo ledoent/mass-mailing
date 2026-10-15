@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_mail_mass_mailing_form" model="ir.ui.view">
+        <field name="model">mailing.mailing</field>
+        <field name="inherit_id" ref="mass_mailing.view_mail_mass_mailing_form" />
+        <field name="arch" type="xml">
+            <field name="state" position="before">
+                <button
+                    string="Resend"
+                    invisible='state != "done"'
+                    name="button_draft"
+                    type="object"
+                />
+            </field>
+            <header position="after">
+                <div
+                    class="alert alert-warning o_mass_mailing_alert_message"
+                    role="alert"
+                    invisible="state != 'draft' or sent == 0"
+                >
+                    <i
+                    class="oi"
+                    data-icon="info"
+                /> New sending will be done only to not sent/new recipients. If you want to resend again the mass mailing to already sent recipients, click <b
+                >below</b> on Sent or on Cancelled emails and remove the existing records.
+                </div>
+            </header>
+            <!-- `is_template or` is load-bearing. 19.0 core's button_box carried no
+                 `invisible`, so setting one here was additive. 20.0 core's does
+                 (`invisible="is_template"`), and position="attributes" REPLACES the
+                 value rather than combining with it — so the 19.0 spelling silently
+                 drops core's guard and the stat buttons reappear on mailing
+                 templates. Nothing errors; the view just renders wrongly. -->
+            <div name="button_box" position="attributes">
+                <attribute name="invisible">is_template or sent == 0</attribute>
+            </div>
+        </field>
+    </record>
+</odoo>
