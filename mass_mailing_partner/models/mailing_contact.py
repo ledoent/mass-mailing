@@ -12,9 +12,17 @@ from odoo import api, fields, models
 class MailingContact(models.Model):
     _inherit = "mailing.contact"
 
-    partner_id = fields.Many2one(
-        comodel_name="res.partner", string="Partner", domain=[("email", "!=", False)]
-    )
+    # partner_id is core's in 20.0 (mass_mailing/models/mailing_contact.py), on
+    # the same model with the same comodel and therefore the same column, so
+    # re-declaring it here would only fight core over the string and the
+    # domain. Everything below keeps working against core's field.
+    #
+    # One deliberate loss: ours carried domain=[("email", "!=", False)] and
+    # core's carries none, so the form no longer filters partners without an
+    # address out of the dropdown. The _check_email_mass_mailing_contacts
+    # constraint on res.partner still refuses to clear the address of a linked
+    # partner, so the invariant that mattered is still enforced -- it is now
+    # enforced on save rather than hidden from the picker.
     tag_ids = fields.Many2many(compute="_compute_tag_ids", store=True)
 
     @api.depends("partner_id", "partner_id.category_id")
@@ -30,8 +38,14 @@ class MailingContact(models.Model):
         if self.partner_id:
             self.name = self.partner_id.name
             self.email = self.partner_id.email
+            # commercial_company_name, not company_name: 20.0 removed the
+            # free-text res.partner.company_name and core's replacement is
+            # related to commercial_partner_id.name ("will act in place of
+            # company_name", per the comment on it). mailing.contact keeps its
+            # own company_name, so only the partner side moves.
             self.company_name = (
-                self.partner_id.company_id.name or self.partner_id.company_name
+                self.partner_id.company_id.name
+                or self.partner_id.commercial_company_name
             )
             self.country_id = self.partner_id.country_id
 
@@ -56,11 +70,13 @@ class MailingContact(models.Model):
     def write(self, vals):
         # If partner_id is changing, sync dependent fields from partner
         # to ensure consistency
-        if "partner_id" in vals and vals["partner_id"]:
+        if vals.get("partner_id"):
             partner = self.env["res.partner"].browse(vals["partner_id"])
             vals["name"] = partner.name
             vals["email"] = partner.email
-            vals["company_name"] = partner.company_id.name or partner.company_name
+            vals["company_name"] = (
+                partner.company_id.name or partner.commercial_company_name
+            )
             vals["country_id"] = partner.country_id.id
         result = super().write(vals)
         for contact in self:
@@ -80,7 +96,13 @@ class MailingContact(models.Model):
             "name": self.name or self.email,
             "email": self.email,
             "country_id": self.country_id.id,
-            "company_name": self.company_name,
+            # No "company_name". 20.0 removed it from res.partner, and the
+            # replacement (commercial_company_name) is related to
+            # commercial_partner_id.name, so it cannot be written as free text
+            # -- there is nowhere on a 20.0 partner to put a company name that
+            # is not an actual partner record. The contact keeps its own
+            # company_name either way; only the partner created from it loses
+            # the echo.
             "company_id": False,
             "category_id": self._get_categories(),
         }

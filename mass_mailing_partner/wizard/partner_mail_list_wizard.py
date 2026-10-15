@@ -23,11 +23,9 @@ class PartnerMailListWizard(models.TransientModel):
         contact_obj = self.env["mailing.contact"]
         partners = self.partner_ids
 
-        add_list = partners.filtered("mass_mailing_contact_ids")
+        add_list = partners.filtered("mailing_contact_ids")
         for partner in add_list:
-            self.mail_list_id.contact_ids = [
-                (4, partner.mass_mailing_contact_ids[0].id)
-            ]
+            self.mail_list_id.contact_ids = [(4, partner.mailing_contact_ids[0].id)]
 
         to_create = partners - add_list
         for partner in to_create:

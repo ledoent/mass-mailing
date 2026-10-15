@@ -18,7 +18,11 @@ class ResPartnerCase(base.BaseCase):
         self.create_mailing_contact(
             {"email": "partner@test.com", "list_ids": [[6, 0, [self.mailing_list2.id]]]}
         )
-        self.assertEqual(self.partner.mass_mailing_contacts_count, 2)
+        # Counting the relation rather than a stored count field: 20.0 core
+        # owns res.partner.mailing_contact_ids and ships no count alongside it
+        # (its stat button tests the One2many directly), so the module's
+        # mass_mailing_contacts_count went with the duplicate relation.
+        self.assertEqual(len(self.partner.mailing_contact_ids), 2)
 
     def test_write_res_partner(self):
         contact = self.create_mailing_contact(

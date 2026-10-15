@@ -12,17 +12,20 @@ from odoo.exceptions import ValidationError
 class ResPartner(models.Model):
     _inherit = "res.partner"
 
-    mass_mailing_contact_ids = fields.One2many(
-        string="Mailing contacts",
-        comodel_name="mailing.contact",
-        inverse_name="partner_id",
-    )
-    mass_mailing_contacts_count = fields.Integer(
-        string="Mailing contacts number",
-        compute="_compute_mass_mailing_contacts_count",
-        store=True,
-        compute_sudo=True,
-    )
+    # No mass_mailing_contact_ids / mass_mailing_contacts_count here any more.
+    #
+    # 20.0 core absorbed them: res.partner.mailing_contact_ids is the same
+    # One2many over the same inverse (mailing.contact.partner_id), and core
+    # ships its own stat button on the partner form at the same anchor with the
+    # same group. Keeping ours would put two identical relations and a second
+    # button on every partner. Core has no count field -- its button tests
+    # `mailing_contact_ids` directly -- so the count goes with it.
+    #
+    # Nothing migrates: the One2many has no column of its own, so dropping the
+    # declaration just hands the relation to core.
+    #
+    # mailing.trace.partner_id is a different story -- core still has no such
+    # field in 20.0, so the stats pair below stays ours.
     mass_mailing_stats_ids = fields.One2many(
         string="Mass mailing stats",
         comodel_name="mailing.trace",
@@ -37,7 +40,7 @@ class ResPartner(models.Model):
     @api.constrains("email")
     def _check_email_mass_mailing_contacts(self):
         for partner in self:
-            if not partner.email and partner.sudo().mass_mailing_contact_ids:
+            if not partner.email and partner.sudo().mailing_contact_ids:
                 raise ValidationError(
                     self.env._(
                         "This partner '%(name)s' is linked to one or more mass "
@@ -45,15 +48,6 @@ class ResPartner(models.Model):
                         name=partner.name,
                     )
                 )
-
-    @api.depends("mass_mailing_contact_ids")
-    def _compute_mass_mailing_contacts_count(self):
-        contact_data = self.env["mailing.contact"]._read_group(
-            [("partner_id", "in", self.ids)], ["partner_id"], ["__count"]
-        )
-        mapped_data = {partner.id: count for partner, count in contact_data if partner}
-        for partner in self:
-            partner.mass_mailing_contacts_count = mapped_data.get(partner.id, 0)
 
     @api.depends("mass_mailing_stats_ids")
     def _compute_mass_mailing_stats_count(self):
