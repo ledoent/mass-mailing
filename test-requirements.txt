@@ -1,0 +1,2 @@
+# DO NOT MERGE — temporary pin until mass_mailing_partner 20.0 is released.
+odoo-addon-mass_mailing_partner @ git+https://github.com/ledoent/mass-mailing.git@20.0-mig-mass_mailing_partner#subdirectory=mass_mailing_partner
